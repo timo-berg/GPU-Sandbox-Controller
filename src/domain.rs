@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -19,6 +19,14 @@ pub struct SubmitJobResponse {
 #[serde(rename_all = "snake_case")]
 pub enum JobStatus {
     Queued,
+    Running,
+    Finished(String),
+}
+
+#[derive(Serialize)]
+pub struct JobErrorResponse {
+    pub error: String,
+    pub message: String,
 }
 
 #[derive(Clone, Serialize)]
@@ -29,5 +37,8 @@ pub struct Job {
     pub payload: serde_json::Value,
     pub capabilities: Vec<String>,
     pub submitted_at: OffsetDateTime,
+    pub started_at: Option<OffsetDateTime>,
+    pub finished_at: Option<OffsetDateTime>,
+    pub duration: Option<Duration>,
     pub status: JobStatus,
 }

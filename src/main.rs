@@ -4,15 +4,28 @@ use axum::{
 };
 
 mod api;
+mod config;
+mod dispatcher;
 mod domain;
 mod state;
 
 use api::{get_job, submit_job};
 use state::AppState;
+use tokio::sync::mpsc;
+
+use crate::config::Config;
+use crate::domain::Job;
 
 #[tokio::main]
-async fn main() {
-    let state = AppState::new();
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let config = Config::load("config.toml").await?;
+
+    let (tx, rx) = mpsc::channel::<Job>(config.queue_length);
+
+    let state = AppState::new(tx);
+
+    let state_clone = state.inner.clone();
+    tokio::spawn(dispatcher::run_dispatcher(rx, state_clone));
 
     let app = Router::new()
         .route("/healthz", get(|| async { "Hello Sandbox" }))
@@ -25,4 +38,6 @@ async fn main() {
         .unwrap();
 
     axum::serve(listener, app).await.unwrap();
+
+    Ok(())
 }

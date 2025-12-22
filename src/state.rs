@@ -1,21 +1,21 @@
 use std::collections::HashMap;
-use std::collections::VecDeque;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tokio::sync::mpsc::Sender;
 use uuid::Uuid;
 
 use crate::domain::Job;
 
 pub struct InnerState {
     pub jobs: HashMap<Uuid, Job>,
-    pub queue: VecDeque<Uuid>,
+    pub queue: Sender<Job>,
 }
 
 impl InnerState {
-    fn new() -> Self {
+    fn new(sender: Sender<Job>) -> Self {
         Self {
             jobs: HashMap::new(),
-            queue: VecDeque::new(),
+            queue: sender,
         }
     }
 }
@@ -26,9 +26,9 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new() -> Self {
+    pub fn new(sender: Sender<Job>) -> Self {
         Self {
-            inner: Arc::new(RwLock::new(InnerState::new())),
+            inner: Arc::new(RwLock::new(InnerState::new(sender))),
         }
     }
 }
