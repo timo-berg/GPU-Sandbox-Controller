@@ -32,6 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/healthz", get(|| async { "Hello Sandbox" }))
         .route("/jobs", post(submit_job))
         .route("/jobs/{job_id}", get(get_job))
+        .route("/jobs/list", get(list_jobs))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;

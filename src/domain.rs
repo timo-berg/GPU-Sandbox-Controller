@@ -1,3 +1,5 @@
+use std::str;
+
 use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
@@ -42,4 +44,17 @@ pub struct Job {
     pub finished_at: Option<OffsetDateTime>,
     pub duration: Option<Duration>,
     pub status: JobStatus,
+}
+
+#[derive(Serialize)]
+pub struct JobListItem {
+    pub job_id: Uuid,
+    pub tenant_id: String,
+    pub status: JobStatus,
+    pub submitted_at: OffsetDateTime,
+}
+
+#[derive(Serialize)]
+pub struct JobListResponse {
+    pub jobs: Vec<JobListItem>,
 }

@@ -1,4 +1,7 @@
-use crate::domain::{Job, JobErrorResponse, JobStatus, SubmitJobRequest, SubmitJobResponse};
+use crate::domain::{
+    Job, JobErrorResponse, JobListItem, JobListResponse, JobStatus, SubmitJobRequest,
+    SubmitJobResponse,
+};
 use crate::state::AppState;
 use axum::{Json, extract::Path, extract::State, http::StatusCode, response::IntoResponse};
 use time::OffsetDateTime;
@@ -23,35 +26,34 @@ pub async fn submit_job(
         duration: None,
         status: JobStatus::Queued,
     };
-    {
-        let mut inner = state.inner.write().await;
 
-        let job_for_queue = job.clone();
+    let mut inner = state.inner.write().await;
 
-        match inner.queue.try_send(job_for_queue) {
-            Ok(()) => {
-                inner.jobs.insert(job_id, job);
-            }
-            Err(tokio::sync::mpsc::error::TrySendError::Full(_)) => {
-                return (
-                    StatusCode::SERVICE_UNAVAILABLE,
-                    Json(JobErrorResponse {
-                        error: "queue_full".to_string(),
-                        message: "Job queue full please kwewe later".to_string(),
-                    }),
-                )
-                    .into_response();
-            }
-            Err(tokio::sync::mpsc::error::TrySendError::Closed(_)) => {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(JobErrorResponse {
-                        error: "service_closed".to_string(),
-                        message: "Sorry, we are closed for business".to_string(),
-                    }),
-                )
-                    .into_response();
-            }
+    let job_for_queue = job.clone();
+
+    match inner.queue.try_send(job_for_queue) {
+        Ok(()) => {
+            inner.jobs.insert(job_id, job);
+        }
+        Err(tokio::sync::mpsc::error::TrySendError::Full(_)) => {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(JobErrorResponse {
+                    error: "queue_full".to_string(),
+                    message: "Job queue full please kwewe later".to_string(),
+                }),
+            )
+                .into_response();
+        }
+        Err(tokio::sync::mpsc::error::TrySendError::Closed(_)) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(JobErrorResponse {
+                    error: "service_closed".to_string(),
+                    message: "Sorry, we are closed for business".to_string(),
+                }),
+            )
+                .into_response();
         }
     }
 
@@ -72,4 +74,23 @@ pub async fn get_job(State(state): State<AppState>, Path(job_id): Path<Uuid>) ->
         )
             .into_response(),
     }
+}
+
+pub async fn list_jobs(State(state): State<AppState>) -> impl IntoResponse {
+    let inner = state.inner.read().await;
+
+    let mut jobs: Vec<JobListItem> = inner
+        .jobs
+        .values()
+        .map(|job| JobListItem {
+            job_id: job.job_id,
+            tenant_id: job.tenant_id.clone(),
+            status: job.status.clone(),
+            submitted_at: job.submitted_at,
+        })
+        .collect();
+
+    jobs.sort_by_key(|job| job.submitted_at);
+
+    Json(JobListResponse { jobs })
 }
