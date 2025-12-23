@@ -7,9 +7,10 @@ mod api;
 mod config;
 mod dispatcher;
 mod domain;
+mod gpu_manager;
 mod state;
 
-use api::{get_job, submit_job};
+use api::{get_job, list_jobs, submit_job};
 use state::AppState;
 use tokio::sync::mpsc;
 
@@ -22,9 +23,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tx, rx) = mpsc::channel::<Job>(config.queue_length);
 
-    let state = AppState::new(tx);
+    let state = AppState::new(tx, &config);
 
-    let state_clone = state.inner.clone();
+    let state_clone = state.clone();
     tokio::spawn(dispatcher::run_dispatcher(rx, state_clone));
 
     let app = Router::new()
@@ -33,11 +34,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/jobs/{job_id}", get(get_job))
         .with_state(state);
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
 
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app).await?;
 
     Ok(())
 }

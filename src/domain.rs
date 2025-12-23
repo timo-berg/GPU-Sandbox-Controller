@@ -21,6 +21,7 @@ pub enum JobStatus {
     Queued,
     Running,
     Finished(String),
+    Failed(String),
 }
 
 #[derive(Serialize)]

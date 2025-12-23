@@ -4,6 +4,8 @@ use tokio::fs;
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub queue_length: usize,
+    pub gpu_slots: usize,
+    pub per_tenant_limit: usize,
 }
 
 impl Config {
