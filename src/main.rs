@@ -8,6 +8,7 @@ mod config;
 mod dispatcher;
 mod domain;
 mod gpu_manager;
+mod sandbox;
 mod state;
 
 use api::{get_job, list_jobs, submit_job};

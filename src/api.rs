@@ -17,7 +17,7 @@ pub async fn submit_job(
     let job = Job {
         job_id,
         tenant_id: req.tenant_id,
-        model_id: req.model_id,
+        module_id: req.module_id,
         payload: req.payload,
         capabilities: req.capabilities,
         submitted_at,
@@ -25,6 +25,7 @@ pub async fn submit_job(
         finished_at: None,
         duration: None,
         status: JobStatus::Queued,
+        result: None,
     };
 
     let mut inner = state.inner.write().await;

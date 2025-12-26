@@ -4,10 +4,12 @@ use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
+use crate::sandbox::ExecutionResult;
+
 #[derive(Deserialize)]
 pub struct SubmitJobRequest {
     pub tenant_id: String,
-    pub model_id: String,
+    pub module_id: String,
     pub payload: serde_json::Value,
     pub capabilities: Vec<String>,
 }
@@ -36,7 +38,7 @@ pub struct JobErrorResponse {
 pub struct Job {
     pub job_id: Uuid,
     pub tenant_id: String,
-    pub model_id: String,
+    pub module_id: String,
     pub payload: serde_json::Value,
     pub capabilities: Vec<String>,
     pub submitted_at: OffsetDateTime,
@@ -44,6 +46,7 @@ pub struct Job {
     pub finished_at: Option<OffsetDateTime>,
     pub duration: Option<Duration>,
     pub status: JobStatus,
+    pub result: Option<ExecutionResult>,
 }
 
 #[derive(Serialize)]
