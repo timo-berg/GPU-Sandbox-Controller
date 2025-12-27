@@ -2,6 +2,7 @@ use crate::domain::{
     Job, JobErrorResponse, JobListItem, JobListResponse, JobStatus, SubmitJobRequest,
     SubmitJobResponse,
 };
+
 use crate::state::AppState;
 use axum::{Json, extract::Path, extract::State, http::StatusCode, response::IntoResponse};
 use time::OffsetDateTime;
@@ -27,6 +28,46 @@ pub async fn submit_job(
         status: JobStatus::Queued,
         result: None,
     };
+
+    let tenant = {
+        let tenants = state.tenants.read().await;
+        tenants.get(&job.tenant_id).cloned()
+    };
+
+    let Some(t) = tenant else {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(JobErrorResponse {
+                error: "unknown_tenant".to_string(),
+                message: format!("Tenant ID {} not known", job.tenant_id),
+            }),
+        )
+            .into_response();
+    };
+
+    if job
+        .capabilities
+        .iter()
+        .any(|c| !t.allowed_capabilities.contains(c))
+    {
+        let unpermitted_capabilities: Vec<&String> = job
+            .capabilities
+            .iter()
+            .filter(|c| !t.allowed_capabilities.contains(*c))
+            .collect();
+
+        return (
+            StatusCode::FORBIDDEN,
+            Json(JobErrorResponse {
+                error: "unpermitted_capabilities".to_string(),
+                message: format!(
+                    "Unpermitted capabilities requested: {:?} ",
+                    unpermitted_capabilities
+                ),
+            }),
+        )
+            .into_response();
+    }
 
     let mut inner = state.inner.write().await;
 
