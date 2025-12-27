@@ -1,3 +1,9 @@
 queue_length = 30
 gpu_slots = 10
 per_tenant_limit = 2
+
+capabilities = [
+    "gpu.compute",
+    "logging",
+    "network.egress",
+]

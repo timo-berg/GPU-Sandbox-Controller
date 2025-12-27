@@ -10,21 +10,23 @@ mod domain;
 mod gpu_manager;
 mod sandbox;
 mod state;
+mod tenant;
 
 use api::{get_job, list_jobs, submit_job};
 use state::AppState;
 use tokio::sync::mpsc;
 
-use crate::config::Config;
 use crate::domain::Job;
+use crate::{config::Config, tenant::Tenant};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::load("config.toml").await?;
+    let tenants = Tenant::load_all("tenants.json").await?;
 
     let (tx, rx) = mpsc::channel::<Job>(config.queue_length);
 
-    let state = AppState::new(tx, &config);
+    let state = AppState::new(tx, &config, tenants);
 
     let state_clone = state.clone();
     tokio::spawn(dispatcher::run_dispatcher(rx, state_clone));
