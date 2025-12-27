@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 set -euo pipefail
 
 URL="${URL:-http://127.0.0.1:3000/jobs/list}"
