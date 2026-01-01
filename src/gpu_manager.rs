@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::config::Config;
+use crate::{config::Config, tenant::Tenant};
 
 pub struct GpuManager {
     gpu_slots: usize,
@@ -17,7 +17,7 @@ impl GpuManager {
         }
     }
 
-    pub fn try_reserve_slot(&mut self, tenant_id: &str) -> Result<(), GpuError> {
+    pub fn try_reserve_slot(&mut self, tenant: &Tenant) -> Result<(), GpuError> {
         let total_used: usize = self.tenant_resources.values().sum();
         if total_used >= self.gpu_slots {
             return Err(GpuError::NoGlobalCapacity);
@@ -25,10 +25,10 @@ impl GpuManager {
 
         let current_count = self
             .tenant_resources
-            .entry(tenant_id.to_string())
+            .entry(tenant.tenant_id.to_string())
             .or_insert(0);
 
-        if *current_count >= self.per_tenant_limit {
+        if *current_count >= tenant.gpu_slot_limit {
             return Err(GpuError::TenantLimitReached);
         }
 

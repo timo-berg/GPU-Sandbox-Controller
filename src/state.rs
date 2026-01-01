@@ -1,5 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
+use time::OffsetDateTime;
 use tokio::sync::RwLock;
 use tokio::sync::mpsc::Sender;
 use uuid::Uuid;
@@ -28,6 +29,7 @@ pub struct AppState {
     pub inner: Arc<RwLock<InnerState>>,
     pub gpu_manager: Arc<RwLock<GpuManager>>,
     pub tenants: Arc<RwLock<HashMap<String, Tenant>>>,
+    pub tenant_usage: Arc<RwLock<HashMap<String, VecDeque<OffsetDateTime>>>>,
 }
 
 impl AppState {
@@ -36,6 +38,7 @@ impl AppState {
             inner: Arc::new(RwLock::new(InnerState::new(sender))),
             gpu_manager: Arc::new(RwLock::new(GpuManager::new(config))),
             tenants: Arc::new(RwLock::new(tenants)),
+            tenant_usage: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 }
